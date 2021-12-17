@@ -257,16 +257,16 @@ int max98090_set_output(PMAXM_CONTEXT codec) {
 	res |= max98090_i2c_write(codec, M98090_REG_LEFT_ADC_LEVEL, (0x4 << M98090_AVLG_SHIFT) | 0x4);
 	res |= max98090_i2c_write(codec, M98090_REG_RIGHT_ADC_LEVEL, (0x4 << M98090_AVLG_SHIFT) | 0x4);
 
-	if (codec->HeadsetMicConnected) {
+	//if (codec->HeadsetMicConnected) {
 		max98090_i2c_write(codec, M98090_REG_MIC2_INPUT_LEVEL, (1 << M98090_MIC_PA2EN_SHIFT) | 0x00); //Set PA2EN to 1 for Headset, 0 for internal mic
 		max98090_i2c_write(codec, M98090_REG_DIGITAL_MIC_ENABLE, (3 << M98090_MICCLK_SHIFT) | 0);
 		max98090_i2c_write(codec, M98090_REG_INPUT_ENABLE, M98090_ADLEN_MASK | M98090_ADREN_MASK | M98090_MBEN_MASK);
-	}
+	/* }
 	else {
 		max98090_i2c_write(codec, M98090_REG_MIC2_INPUT_LEVEL, (0 << M98090_MIC_PA2EN_SHIFT) | 0x00); //Set PA2EN to 1 for Headset, 0 for internal mic
 		max98090_i2c_write(codec, M98090_REG_DIGITAL_MIC_ENABLE, (3 << M98090_MICCLK_SHIFT) | M98090_DIGMICR_MASK | M98090_DIGMICL_MASK);
 		max98090_i2c_write(codec, M98090_REG_INPUT_ENABLE, 0x0); //Set to M98090_ADLEN_MASK | M98090_ADREN_MASK | M98090_MBEN_MASK for headset, 0 for internal mic
-	}
+	}*/
 
 	return res;
 }
@@ -377,7 +377,6 @@ Status
 	PMAXM_CONTEXT pDevice = GetDeviceContext(FxDevice);
 	BOOLEAN fSpbResourceFound = FALSE;
 	BOOLEAN fJackDetectResourceFound = FALSE;
-	BOOLEAN fMicDetectResourceFound = FALSE;
 	NTSTATUS status = STATUS_INSUFFICIENT_RESOURCES;
 
 	UNREFERENCED_PARAMETER(FxResourcesRaw);
@@ -425,11 +424,6 @@ Status
 					pDevice->GpioContext.GpioResHubId.HighPart = pDescriptor->u.Connection.IdHighPart;
 					fJackDetectResourceFound = TRUE;
 				}
-				else if (fMicDetectResourceFound == FALSE) {
-					pDevice->MicGpioContext.GpioResHubId.LowPart = pDescriptor->u.Connection.IdLowPart;
-					pDevice->MicGpioContext.GpioResHubId.HighPart = pDescriptor->u.Connection.IdHighPart;
-					fMicDetectResourceFound = TRUE;
-				}
 			}
 			break;
 		default:
@@ -444,19 +438,13 @@ Status
 	// An SPB resource is required.
 	//
 
-	if (fSpbResourceFound == FALSE || fJackDetectResourceFound == FALSE || fMicDetectResourceFound == FALSE)
+	if (fSpbResourceFound == FALSE || fJackDetectResourceFound == FALSE)
 	{
 		status = STATUS_NOT_FOUND;
 		return status;
 	}
 
 	status = GpioTargetInitialize(FxDevice, &pDevice->GpioContext);
-	if (!NT_SUCCESS(status))
-	{
-		return status;
-	}
-
-	status = GpioTargetInitialize(FxDevice, &pDevice->MicGpioContext);
 	if (!NT_SUCCESS(status))
 	{
 		return status;
@@ -505,7 +493,6 @@ Status
 	IoDisconnectInterruptEx(&params);*/
 
 	GpioTargetDeinitialize(FxDevice, &pDevice->GpioContext);
-	GpioTargetDeinitialize(FxDevice, &pDevice->MicGpioContext);
 	SpbTargetDeinitialize(FxDevice, &pDevice->I2CContext);
 
 	return status;
@@ -588,6 +575,8 @@ CodecJackSwitchWorkItem(
 
 	BYTE gpioState;
 	GpioReadDataSynchronously(&pDevice->GpioContext, &gpioState, sizeof(BYTE));
+	gpioState = !gpioState; //R11 has this flipped
+
 	if (pDevice->HeadphonesConnected != gpioState) {
 		pDevice->HeadphonesConnected = gpioState;
 
@@ -603,7 +592,11 @@ CodecJackSwitchWorkItem(
 		}
 	}
 
-	BYTE micGpioState = 0;
+	max98090_i2c_write(pDevice, M98090_REG_MIC2_INPUT_LEVEL, (1 << M98090_MIC_PA2EN_SHIFT) | 0x00); //Set PA2EN to 1 for Headset, 0 for internal mic
+	max98090_i2c_write(pDevice, M98090_REG_DIGITAL_MIC_ENABLE, (3 << M98090_MICCLK_SHIFT) | 0);
+	max98090_i2c_write(pDevice, M98090_REG_INPUT_ENABLE, M98090_ADLEN_MASK | M98090_ADREN_MASK | M98090_MBEN_MASK);
+
+	/*BYTE micGpioState = 0;
 	GpioReadDataSynchronously(&pDevice->MicGpioContext, &micGpioState, sizeof(BYTE));
 	micGpioState = !micGpioState;
 	if (pDevice->HeadsetMicConnected != micGpioState) {
@@ -619,7 +612,7 @@ CodecJackSwitchWorkItem(
 			max98090_i2c_write(pDevice, M98090_REG_DIGITAL_MIC_ENABLE, (3 << M98090_MICCLK_SHIFT) | M98090_DIGMICR_MASK | M98090_DIGMICL_MASK);
 			max98090_i2c_write(pDevice, M98090_REG_INPUT_ENABLE, 0x0); //Set to M98090_ADLEN_MASK | M98090_ADREN_MASK | M98090_MBEN_MASK for headset, 0 for internal mic
 		}
-	}
+	}*/
 
 	WdfObjectDelete(WorkItem);
 }

@@ -16,7 +16,7 @@ Signature   = "$WINDOWS NT$"
 Class       = Media
 ClassGuid   = {4d36e96c-e325-11ce-bfc1-08002be10318}
 Provider    = CoolStar
-DriverVer   = 06/21/2006,6.1.7779.2
+DriverVer   = 12/16/2021,1.0.0
 CatalogFile = max98090.cat
 PnpLockdown = 1
 
@@ -41,7 +41,7 @@ max98090.sys  = 1,,
 ; Decorated model section take precedence over undecorated 
 ; ones on XP and later.
 [Standard.NT$ARCH$]
-%Max98090.DeviceDesc%=Max98090_Device, ACPI\193C9890
+%Max98090.DeviceDesc%=Max98090_Device, ACPI\VEN_193C&DEV_9890&REV_0002
 
 [Max98090_Device.NT]
 CopyFiles=Drivers_Dir
@@ -73,5 +73,5 @@ LoadOrderGroup = Base
 SPSVCINST_ASSOCSERVICE= 0x00000002
 StdMfg                 = "CoolStar"
 DiskId1                = "Maxim 98090 Installation Disk #1"
-Max98090.DeviceDesc = "Maxim 98090 I2S Audio"
+Max98090.DeviceDesc = "Maxim 98090v2 I2S Audio"
 Max98090.SVCDESC    = "Max98090 Service"

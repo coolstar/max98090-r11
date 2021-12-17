@@ -51,8 +51,6 @@ typedef struct _MAXM_CONTEXT
 
 	GPIO_CONTEXT GpioContext;
 
-	GPIO_CONTEXT MicGpioContext;
-
 	WDFTIMER Timer;
 
 	BOOLEAN ConnectInterrupt;
